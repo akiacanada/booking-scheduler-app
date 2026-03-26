@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Confirmed</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Booking Confirmed</h1>
+        <p>Your dock appointment has been submitted successfully.</p>
+
+        <h2>Booking Details</h2>
+        <ul>
+            <li><strong>Name:</strong> {{ name }}</li>
+            <li><strong>Email:</strong> {{ email }}</li>
+            <li><strong>Company:</strong> {{ company }}</li>
+            <li><strong>Booking Date:</strong> {{ booking_date }}</li>
+            <li><strong>Time Slot:</strong> {{ booking_time }}</li>
+        </ul>
+
+        <a href="/book">
+            <button class="book-btn">Make Another Booking</button>
+        </a>
+
+        <a href="/">
+            <button class="book-btn">Back to Home</button>
+        </a>
+    </div>
+
+    <div class="button-row">
+        <a href="/book">
+            <button class="book-btn">Make Another Booking</button>
+        </a>
+    
+        <a href="/">
+            <button class="book-btn">Back to Home</button>
+        </a>
+    
+        <a href="/admin">
+            <button class="book-btn">View All Bookings</button>
+        </a>
+    </div>
+</body>
+</html>

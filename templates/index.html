@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warehouse Dock Booking Tool</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Warehouse Dock Booking Tool</h1>
+
+        <p>
+            The Warehouse Dock Booking Tool helps warehouse staff and internal
+            operations teams schedule dock door pickup appointments more efficiently.
+            It is designed to reduce scheduling conflicts, improve operational
+            visibility, and create a more organized booking process.
+        </p>
+
+        <h2>Version 1 Features</h2>
+        <ul>
+            <li>View open booking slots</li>
+            <li>Create a booking</li>
+            <li>See booking confirmation</li>
+            <li>Admin can view all bookings</li>
+            <li>Admin can cancel a booking</li>
+        </ul>
+
+        <div class="button-row">
+
+            <a href="/book">
+                <button class="book-btn">Book a Slot</button>
+            </a>
+        
+            <a href="/admin">
+                <p>Review current dock appointment bookings and cancel appointments as needed.</p>
+               
+                <button class="book-btn">View Bookings</button>
+            </a>
+        </div>
+
+
+
+
+        <p class="coming-soon">
+            Booking form coming next.
+        </p>
+    </div>
+</body>
+</html>

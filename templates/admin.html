@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - All Bookings</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>All Bookings</h1>
+
+        {% if bookings %}
+            <table class="bookings-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Company</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in bookings %}
+                        <tr>
+                            <td>{{ booking.name }}</td>
+                            <td>{{ booking.email }}</td>
+                            <td>{{ booking.company }}</td>
+                            <td>{{ booking.booking_date }}</td>
+                            <td>{{ booking.booking_time }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No bookings have been created yet.</p>
+        {% endif %}
+
+        <br>
+        <a href="/">
+            <button class="book-btn">Back to Home</button>
+        </a>
+    </div>
+</body>
+</html>

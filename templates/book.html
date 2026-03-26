@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book a Slot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Book a Dock Appointment</h1>
+        <p>Complete the form below to reserve a dock door pickup slot.</p>
+
+        {% if error %}
+            <p class="error-message">{{ error }}</p>
+        {% endif %}
+
+        <form action="/book" method="POST" class="booking-form">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" name="name" required>
+
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" required>
+
+            <label for="company">Company</label>
+            <input type="text" id="company" name="company">
+
+            <label for="booking_date">Booking Date</label>
+            <input type="date" id="booking_date" name="booking_date" required>
+
+            <label for="booking_time">Time Slot</label>
+            <select id="booking_time" name="booking_time" required>
+                <option value="">Select a time slot</option>
+                {% for slot in time_slots %}
+                    <option value="{{ slot }}">{{ slot }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit" class="book-btn">Submit Booking</button>
+        </form>
+
+        <br>
+        <a href="/">
+            <button class="book-btn">Back to Home</button>
+        </a>
+    </div>
+</body>
+</html>
