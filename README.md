@@ -4,6 +4,8 @@ A Flask app that schedules warehouse dock door appointments and turns the bookin
 data into operational insight: dock utilization, carrier reliability, no-show risk,
 and turn-time bottlenecks.
 
+**[Live demo](https://dock-operations-analytics.onrender.com/dashboard)**. Hosted on Render's free plan, so the first load can take up to a minute while the app wakes up.
+
 ![Dock performance dashboard](docs/dashboard.png)
 
 ## Business problem
