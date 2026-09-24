@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dock Booking Tool{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <nav class="topnav">
+        <a class="brand" href="{{ url_for('home') }}">Dock Booking Tool</a>
+        <div class="nav-links">
+            <a href="{{ url_for('book') }}" class="{{ 'active' if request.endpoint == 'book' }}">Book</a>
+            <a href="{{ url_for('admin') }}" class="{{ 'active' if request.endpoint == 'admin' }}">Operations</a>
+            <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">Dashboard</a>
+        </div>
+    </nav>
+    <main class="container {% block container_class %}{% endblock %}">
+        {% block content %}{% endblock %}
+    </main>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

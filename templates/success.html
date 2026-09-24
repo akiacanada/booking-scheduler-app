@@ -1,46 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Booking Confirmed</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <div class="container">
-        <h1>Booking Confirmed</h1>
-        <p>Your dock appointment has been submitted successfully.</p>
+{% extends "base.html" %}
+{% block title %}Booking Confirmed{% endblock %}
+{% block content %}
+<h1>Booking confirmed</h1>
+<p>Your dock appointment is reserved. Please arrive within 15 minutes of your slot.</p>
 
-        <h2>Booking Details</h2>
-        <ul>
-            <li><strong>Name:</strong> {{ name }}</li>
-            <li><strong>Email:</strong> {{ email }}</li>
-            <li><strong>Company:</strong> {{ company }}</li>
-            <li><strong>Booking Date:</strong> {{ booking_date }}</li>
-            <li><strong>Time Slot:</strong> {{ booking_time }}</li>
-        </ul>
+<dl class="details">
+    <dt>Confirmation #</dt><dd>{{ "%06d" % booking.id }}</dd>
+    <dt>Date</dt><dd>{{ booking.booking_date.strftime("%A, %B %d, %Y") }}</dd>
+    <dt>Time</dt><dd>{{ booking.booking_time | slot }}</dd>
+    <dt>Dock door</dt><dd>Door {{ booking.dock_door }}</dd>
+    <dt>Carrier</dt><dd>{{ booking.carrier }}</dd>
+    <dt>Load</dt><dd>{{ booking.load_type }}, {{ booking.pallet_count }} pallets</dd>
+    <dt>Contact</dt><dd>{{ booking.name }} ({{ booking.email }})</dd>
+</dl>
 
-        <a href="/book">
-            <button class="book-btn">Make Another Booking</button>
-        </a>
-
-        <a href="/">
-            <button class="book-btn">Back to Home</button>
-        </a>
-    </div>
-
-    <div class="button-row">
-        <a href="/book">
-            <button class="book-btn">Make Another Booking</button>
-        </a>
-    
-        <a href="/">
-            <button class="book-btn">Back to Home</button>
-        </a>
-    
-        <a href="/admin">
-            <button class="book-btn">View All Bookings</button>
-        </a>
-    </div>
-</body>
-</html>
+<div class="button-row">
+    <a class="book-btn" href="{{ url_for('book') }}">Make another booking</a>
+    <a class="book-btn secondary" href="{{ url_for('admin') }}">View all bookings</a>
+</div>
+{% endblock %}

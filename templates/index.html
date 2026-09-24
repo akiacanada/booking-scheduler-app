@@ -1,50 +1,33 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Warehouse Dock Booking Tool</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <div class="container">
-        <h1>Warehouse Dock Booking Tool</h1>
+{% extends "base.html" %}
+{% block title %}Warehouse Dock Booking Tool{% endblock %}
+{% block content %}
+<h1>Warehouse Dock Booking Tool</h1>
+<p>
+    Carriers book dock door appointments, the warehouse team runs the day from a
+    live operations view, and managers use the dashboard to track dock
+    utilization, carrier reliability, and turn times.
+</p>
 
-        <p>
-            The Warehouse Dock Booking Tool helps warehouse staff and internal
-            operations teams schedule dock door pickup appointments more efficiently.
-            It is designed to reduce scheduling conflicts, improve operational
-            visibility, and create a more organized booking process.
-        </p>
+<div class="feature-grid">
+    <a class="feature" href="{{ url_for('book') }}">
+        <h3>Book an appointment</h3>
+        <p>Pick a weekday and time slot. Live availability shows how many of the 4 dock doors are still open, and a door is assigned automatically.</p>
+    </a>
+    <a class="feature" href="{{ url_for('admin') }}">
+        <h3>Run the dock</h3>
+        <p>Filter appointments, check trucks in and out, record no-shows and cancellations, and export to CSV.</p>
+    </a>
+    <a class="feature" href="{{ url_for('dashboard') }}">
+        <h3>Analyze performance</h3>
+        <p>KPIs against the prior period, a utilization heatmap, a carrier scorecard, and findings written from the data.</p>
+    </a>
+</div>
 
-        <h2>Version 1 Features</h2>
-        <ul>
-            <li>View open booking slots</li>
-            <li>Create a booking</li>
-            <li>See booking confirmation</li>
-            <li>Admin can view all bookings</li>
-            <li>Admin can cancel a booking</li>
-        </ul>
-
-        <div class="button-row">
-
-            <a href="/book">
-                <button class="book-btn">Book a Slot</button>
-            </a>
-        
-            <a href="/admin">
-                <p>Review current dock appointment bookings and cancel appointments as needed.</p>
-               
-                <button class="book-btn">View Bookings</button>
-            </a>
-        </div>
-
-
-
-
-        <p class="coming-soon">
-            Booking form coming next.
-        </p>
-    </div>
-</body>
-</html>
+<h2>Business questions this answers</h2>
+<ul>
+    <li>Are we using our dock capacity well, and where are the peaks and gaps?</li>
+    <li>Which carriers arrive late or don't show up, and how much does it cost us?</li>
+    <li>What drives slow turn times at the door?</li>
+    <li>Can booking policy (lead time, reminders) reduce wasted slots?</li>
+</ul>
+{% endblock %}

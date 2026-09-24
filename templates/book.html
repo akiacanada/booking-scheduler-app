@@ -1,48 +1,94 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book a Slot</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <div class="container">
-        <h1>Book a Dock Appointment</h1>
-        <p>Complete the form below to reserve a dock door pickup slot.</p>
+{% extends "base.html" %}
+{% block title %}Book a Dock Appointment{% endblock %}
+{% block content %}
+<h1>Book a Dock Appointment</h1>
+<p>Reserve a dock door for a pickup or delivery. Appointments are available weekdays, 8 AM to 5 PM.</p>
 
-        {% if error %}
-            <p class="error-message">{{ error }}</p>
-        {% endif %}
+{% if error %}
+    <p class="error-message">{{ error }}</p>
+{% endif %}
 
-        <form action="/book" method="POST" class="booking-form">
-            <label for="name">Full Name</label>
-            <input type="text" id="name" name="name" required>
+<form action="{{ url_for('book') }}" method="POST" class="booking-form">
+    <div class="form-row">
+        <div>
+            <label for="name">Contact name</label>
+            <input type="text" id="name" name="name" value="{{ form.name }}" required>
+        </div>
+        <div>
+            <label for="email">Contact email</label>
+            <input type="email" id="email" name="email" value="{{ form.email }}" required>
+        </div>
+    </div>
 
-            <label for="email">Email Address</label>
-            <input type="email" id="email" name="email" required>
+    <label for="carrier">Carrier</label>
+    <input type="text" id="carrier" name="carrier" list="carrier-list" value="{{ form.carrier }}" required>
+    <datalist id="carrier-list">
+        {% for c in carriers %}<option value="{{ c }}">{% endfor %}
+    </datalist>
 
-            <label for="company">Company</label>
-            <input type="text" id="company" name="company">
-
-            <label for="booking_date">Booking Date</label>
-            <input type="date" id="booking_date" name="booking_date" required>
-
-            <label for="booking_time">Time Slot</label>
-            <select id="booking_time" name="booking_time" required>
-                <option value="">Select a time slot</option>
-                {% for slot in time_slots %}
-                    <option value="{{ slot }}">{{ slot }}</option>
+    <div class="form-row">
+        <div>
+            <label for="load_type">Load type</label>
+            <select id="load_type" name="load_type" required>
+                {% for t in load_types %}
+                    <option value="{{ t }}" {{ 'selected' if form.load_type == t }}>{{ t }}</option>
                 {% endfor %}
             </select>
-
-            <button type="submit" class="book-btn">Submit Booking</button>
-        </form>
-
-        <br>
-        <a href="/">
-            <button class="book-btn">Back to Home</button>
-        </a>
+        </div>
+        <div>
+            <label for="pallet_count">Pallets</label>
+            <input type="number" id="pallet_count" name="pallet_count" min="1" max="30" value="{{ form.pallet_count }}" required>
+        </div>
     </div>
-</body>
-</html>
+
+    <div class="form-row">
+        <div>
+            <label for="booking_date">Date</label>
+            <input type="date" id="booking_date" name="booking_date" min="{{ today }}" value="{{ form.booking_date }}" required>
+        </div>
+        <div>
+            <label for="booking_time">Time slot</label>
+            <select id="booking_time" name="booking_time" required>
+                <option value="">Select a time slot</option>
+                {% for value, label in time_slots.items() %}
+                    <option value="{{ value }}" data-label="{{ label }}" {{ 'selected' if form.booking_time == value }}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <p id="availability-note" class="hint"></p>
+
+    <button type="submit" class="book-btn">Submit booking</button>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const dateInput = document.getElementById("booking_date");
+const slotSelect = document.getElementById("booking_time");
+const note = document.getElementById("availability-note");
+
+async function refreshAvailability() {
+    if (!dateInput.value) return;
+    const day = new Date(dateInput.value + "T00:00").getDay();
+    if (day === 0 || day === 6) {
+        note.textContent = "The dock is closed on weekends.";
+        return;
+    }
+    const res = await fetch(`{{ url_for('availability') }}?date=${dateInput.value}`);
+    if (!res.ok) return;
+    const open = await res.json();
+    let totalOpen = 0;
+    for (const opt of slotSelect.options) {
+        if (!opt.value) continue;
+        const left = open[opt.value];
+        totalOpen += left;
+        opt.disabled = left <= 0;
+        opt.textContent = `${opt.dataset.label} — ${left > 0 ? left + " door" + (left === 1 ? "" : "s") + " open" : "full"}`;
+    }
+    note.textContent = `${totalOpen} door-slots open on this date.`;
+}
+dateInput.addEventListener("change", refreshAvailability);
+refreshAvailability();
+</script>
+{% endblock %}

@@ -1,46 +1,85 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - All Bookings</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <div class="container">
-        <h1>All Bookings</h1>
+{% extends "base.html" %}
+{% block title %}Dock Operations{% endblock %}
+{% block container_class %}wide{% endblock %}
+{% block content %}
+<div class="page-head">
+    <h1>Dock operations</h1>
+    <a class="book-btn secondary" href="{{ url_for('export_csv', **filters) }}">Export CSV</a>
+</div>
 
-        {% if bookings %}
-            <table class="bookings-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Company</th>
-                        <th>Date</th>
-                        <th>Time</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for booking in bookings %}
-                        <tr>
-                            <td>{{ booking.name }}</td>
-                            <td>{{ booking.email }}</td>
-                            <td>{{ booking.company }}</td>
-                            <td>{{ booking.booking_date }}</td>
-                            <td>{{ booking.booking_time }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>No bookings have been created yet.</p>
-        {% endif %}
+<form method="GET" class="filters">
+    <label>Status
+        <select name="status">
+            <option value="">All</option>
+            {% for s in statuses %}<option {{ 'selected' if filters.status == s }}>{{ s }}</option>{% endfor %}
+        </select>
+    </label>
+    <label>Carrier
+        <select name="carrier">
+            <option value="">All</option>
+            {% for c in carriers %}<option {{ 'selected' if filters.carrier == c }}>{{ c }}</option>{% endfor %}
+        </select>
+    </label>
+    <label>From <input type="date" name="date_from" value="{{ filters.date_from }}"></label>
+    <label>To <input type="date" name="date_to" value="{{ filters.date_to }}"></label>
+    <button type="submit" class="book-btn small">Apply</button>
+    {% if filters %}<a href="{{ url_for('admin') }}" class="clear-link">Clear</a>{% endif %}
+</form>
 
-        <br>
-        <a href="/">
-            <button class="book-btn">Back to Home</button>
-        </a>
-    </div>
-</body>
-</html>
+<p class="hint">{{ "{:,}".format(pagination.total) }} appointments</p>
+
+{% if pagination.items %}
+<div class="table-wrap">
+<table class="bookings-table">
+    <thead>
+        <tr>
+            <th>Date</th><th>Time</th><th>Door</th><th>Carrier</th><th>Load</th>
+            <th>Status</th><th>Arrived</th><th>Dwell</th><th></th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for b in pagination.items %}
+        {% set on_site = b.status == 'Scheduled' and b.arrived_at %}
+        <tr>
+            <td>{{ b.booking_date.strftime("%a %b %d, %Y") }}</td>
+            <td>{{ b.booking_time | slot }}</td>
+            <td>{{ b.dock_door }}</td>
+            <td>{{ b.carrier }}<div class="sub">{{ b.name }}</div></td>
+            <td>{{ b.load_type }}<div class="sub">{{ b.pallet_count }} pallets</div></td>
+            <td><span class="status status-{{ 'onsite' if on_site else b.status | lower }}">{{ 'On site' if on_site else b.status }}</span></td>
+            <td>
+                {% if b.arrived_at %}
+                    {{ b.arrived_at.strftime("%-I:%M %p") }}
+                    {% if b.minutes_late > 15 %}<div class="sub late">{{ b.minutes_late }} min late</div>{% endif %}
+                {% endif %}
+            </td>
+            <td>{{ (b.dwell_minutes ~ " min") if b.dwell_minutes is not none }}</td>
+            <td class="actions">
+                {% if b.status == 'Scheduled' %}
+                <form method="POST" action="{{ url_for('update_status', booking_id=b.id) }}">
+                    <input type="hidden" name="next" value="{{ request.full_path }}">
+                    {% if not b.arrived_at %}
+                        <button name="action" value="check_in">Check in</button>
+                        <button name="action" value="no_show">No-show</button>
+                        <button name="action" value="cancel" class="danger">Cancel</button>
+                    {% else %}
+                        <button name="action" value="check_out">Check out</button>
+                    {% endif %}
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<div class="pager">
+    {% if pagination.has_prev %}<a href="{{ url_for('admin', page=pagination.prev_num, **filters) }}">&larr; Newer</a>{% endif %}
+    <span>Page {{ pagination.page }} of {{ pagination.pages }}</span>
+    {% if pagination.has_next %}<a href="{{ url_for('admin', page=pagination.next_num, **filters) }}">Older &rarr;</a>{% endif %}
+</div>
+{% else %}
+    <p>No appointments match these filters.</p>
+{% endif %}
+{% endblock %}

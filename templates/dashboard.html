@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block title %}Dock Performance Dashboard{% endblock %}
+{% block container_class %}wide{% endblock %}
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% macro delta(cur, prev, better="up", kind="pp") %}
+    {% if cur is not none and prev is not none %}
+        {% set diff = cur - prev %}
+        {% if kind == "pp" %}{% set text = "%+.1f pts" % (diff * 100) %}{% set noise = 0.0005 %}
+        {% elif kind == "min" %}{% set text = "%+.0f min" % diff %}{% set noise = 0.5 %}
+        {% else %}{% set text = "%+.0f%%" % ((diff / prev * 100) if prev else 0) %}{% set noise = (prev or 0) * 0.005 %}{% endif %}
+        {% set tone = "" if diff | abs < noise else ("good" if (diff > 0) == (better == "up") else "bad") %}
+        <span class="delta {{ tone }}">{{ text }} vs prior {{ period }}d</span>
+    {% endif %}
+{% endmacro %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1>Dock performance</h1>
+        <p class="hint">{{ start.strftime("%b %d, %Y") }} – {{ end.strftime("%b %d, %Y") }}</p>
+    </div>
+    <div class="tabs">
+        {% for p in (30, 90, 180) %}
+            <a href="{{ url_for('dashboard', period=p) }}" class="{{ 'active' if p == period }}">{{ p }} days</a>
+        {% endfor %}
+    </div>
+</div>
+
+<section class="kpi-grid">
+    <div class="kpi">
+        <div class="kpi-label">Door utilization</div>
+        <div class="kpi-value">{{ kpis.utilization | pct }}</div>
+        {{ delta(kpis.utilization, prev_kpis.utilization, "up") }}
+    </div>
+    <div class="kpi">
+        <div class="kpi-label">On-time arrivals</div>
+        <div class="kpi-value">{{ kpis.on_time_rate | pct }}</div>
+        {{ delta(kpis.on_time_rate, prev_kpis.on_time_rate, "up") }}
+    </div>
+    <div class="kpi">
+        <div class="kpi-label">No-show rate</div>
+        <div class="kpi-value">{{ kpis.no_show_rate | pct(1) }}</div>
+        {{ delta(kpis.no_show_rate, prev_kpis.no_show_rate, "down") }}
+    </div>
+    <div class="kpi">
+        <div class="kpi-label">Avg dwell time</div>
+        <div class="kpi-value">{{ "%.0f" % kpis.avg_dwell if kpis.avg_dwell else "—" }}<small> min</small></div>
+        {{ delta(kpis.avg_dwell, prev_kpis.avg_dwell, "down", "min") }}
+    </div>
+    <div class="kpi">
+        <div class="kpi-label">Completed appointments</div>
+        <div class="kpi-value">{{ "{:,}".format(kpis.completed) }}</div>
+        {{ delta(kpis.completed, prev_kpis.completed, "up", "rel") }}
+    </div>
+    <div class="kpi">
+        <div class="kpi-label">Next {{ upcoming.days }} days</div>
+        <div class="kpi-value">{{ upcoming.utilization | pct }}</div>
+        <span class="delta">{{ "{:,}".format(upcoming.booked) }} booked · {{ "{:,}".format(upcoming.pallets) }} pallets</span>
+    </div>
+</section>
+
+{% if insights %}
+<section class="panel">
+    <h2>Key findings</h2>
+    <div class="insights">
+        {% for i in insights %}
+            <div class="insight">
+                <h3>{{ i.title }}</h3>
+                <p>{{ i.body }}</p>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<section class="panel">
+    <h2>Weekly appointment outcomes</h2>
+    <div class="chart-box"><canvas id="weeklyChart"></canvas></div>
+</section>
+
+<div class="two-col">
+    <section class="panel">
+        <h2>Door utilization by day and slot</h2>
+        <div class="table-wrap">
+        <table class="heatmap">
+            <thead>
+                <tr><th></th>{% for label in time_slots.values() %}<th>{{ label }}</th>{% endfor %}</tr>
+            </thead>
+            <tbody>
+            {% for row in heatmap %}
+                <tr>
+                    <th>{{ row.day }}</th>
+                    {% for u in row.cells %}
+                        <td style="--u: {{ u or 0 }}" class="{{ 'hot' if u and u >= 0.75 }}">{{ u | pct }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        <p class="hint">Share of the 4 dock doors booked in each slot. Darker cells are busier.</p>
+    </section>
+
+    <section class="panel">
+        <h2>No-show rate by booking lead time</h2>
+        <div class="chart-box short"><canvas id="leadChart"></canvas></div>
+    </section>
+</div>
+
+<section class="panel">
+    <h2>Carrier scorecard</h2>
+    <div class="table-wrap">
+    <table class="bookings-table scorecard">
+        <thead>
+            <tr>
+                <th>Carrier</th><th>Booked</th><th>Completed</th><th>On-time</th>
+                <th>No-show</th><th>Cancelled</th><th>Avg late (when late)</th><th>Avg dwell</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for c in carriers %}
+            <tr>
+                <td>{{ c.carrier }}</td>
+                <td>{{ "{:,}".format(c.booked) }}</td>
+                <td>{{ "{:,}".format(c.completed) }}</td>
+                <td class="{{ 'flag' if c.on_time_rate is not none and c.on_time_rate < 0.8 }}">{{ c.on_time_rate | pct }}</td>
+                <td class="{{ 'flag' if c.no_show_rate is not none and c.no_show_rate > 0.05 }}">{{ c.no_show_rate | pct(1) }}</td>
+                <td>{{ c.cancelled }}</td>
+                <td>{{ ("%.0f min" % c.avg_minutes_late) if c.avg_minutes_late else "—" }}</td>
+                <td>{{ ("%.0f min" % c.avg_dwell) if c.avg_dwell else "—" }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    <p class="hint">Flagged: on-time below 80% or no-show above 5%.</p>
+</section>
+
+<section class="panel">
+    <h2>Average dwell time by slot</h2>
+    <div class="chart-box short"><canvas id="dwellChart"></canvas></div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const weekly = {{ weekly | tojson }};
+const lead = {{ lead | tojson }};
+const dwell = {{ dwell | tojson }};
+const target = {{ target_dwell }};
+
+Chart.defaults.font.family = "Inter, Arial, sans-serif";
+Chart.defaults.color = "#555";
+const blue = "#1f3c88", amber = "#e0a030", grey = "#b8bfcc", red = "#c0392b";
+
+new Chart(document.getElementById("weeklyChart"), {
+    type: "bar",
+    data: {
+        labels: weekly.map(w => new Date(w.week_start + "T00:00").toLocaleDateString(undefined, {month: "short", day: "numeric"})),
+        datasets: [
+            {label: "Completed", data: weekly.map(w => w.completed), backgroundColor: blue},
+            {label: "No-show", data: weekly.map(w => w.no_show), backgroundColor: amber},
+            {label: "Cancelled", data: weekly.map(w => w.cancelled), backgroundColor: grey},
+        ],
+    },
+    options: {
+        maintainAspectRatio: false,
+        scales: {x: {stacked: true, grid: {display: false}}, y: {stacked: true, title: {display: true, text: "Appointments"}}},
+        plugins: {legend: {position: "bottom"}, tooltip: {mode: "index"}},
+    },
+});
+
+new Chart(document.getElementById("leadChart"), {
+    type: "bar",
+    data: {
+        labels: lead.map(l => l.bucket),
+        datasets: [{label: "No-show rate", data: lead.map(l => l.no_show_rate * 100), backgroundColor: amber}],
+    },
+    options: {
+        maintainAspectRatio: false,
+        scales: {x: {title: {display: true, text: "Booked this far ahead"}, grid: {display: false}},
+                 y: {beginAtZero: true, ticks: {callback: v => v + "%"}}},
+        plugins: {legend: {display: false},
+                  tooltip: {callbacks: {label: c => `${c.parsed.y.toFixed(1)}% of ${lead[c.dataIndex].n} appointments`}}},
+    },
+});
+
+new Chart(document.getElementById("dwellChart"), {
+    type: "bar",
+    data: {
+        labels: dwell.map(d => d.slot),
+        datasets: [
+            {label: "Avg dwell (min)", data: dwell.map(d => d.avg_dwell), backgroundColor: dwell.map(d => d.avg_dwell > target ? red : blue)},
+            {label: `Target (${target} min)`, data: dwell.map(() => target), type: "line", borderColor: "#333", borderDash: [6, 4], pointRadius: 0},
+        ],
+    },
+    options: {
+        maintainAspectRatio: false,
+        scales: {x: {grid: {display: false}}, y: {beginAtZero: true, title: {display: true, text: "Minutes"}}},
+        plugins: {legend: {position: "bottom"}, tooltip: {callbacks: {label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(0)}`}}},
+    },
+});
+</script>
+{% endblock %}
