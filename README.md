@@ -116,3 +116,10 @@ seed_data.py            Synthetic data generator with business patterns
 sql/analysis_queries.sql  Standalone SQL analysis
 templates/, static/     UI
 ```
+
+## Future improvements
+
+- User authentication and role-based access (carrier vs warehouse staff)
+- Calendar integration and email confirmations for short-notice bookings
+- Carrier-facing scorecard and slot priority based on reliability
+- Deploy with a hosted database for a live demo
